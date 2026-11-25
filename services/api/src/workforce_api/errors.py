@@ -23,12 +23,14 @@ class ApiError(Exception):
         message: str,
         status_code: int,
         details: dict[str, Any] | None = None,
+        headers: dict[str, str] | None = None,
     ) -> None:
         super().__init__(message)
         self.code = code
         self.message = message
         self.status_code = status_code
         self.details = details or {}
+        self.headers = headers or {}
 
 
 _STATUS_TO_CODE: dict[int, ErrorCode] = {
@@ -42,7 +44,11 @@ _STATUS_TO_CODE: dict[int, ErrorCode] = {
 
 
 def _response(
-    status_code: int, code: ErrorCode, message: str, details: dict[str, Any] | None = None
+    status_code: int,
+    code: ErrorCode,
+    message: str,
+    details: dict[str, Any] | None = None,
+    headers: dict[str, str] | None = None,
 ) -> JSONResponse:
     envelope = ErrorEnvelope(
         error=ErrorBody(
@@ -52,12 +58,14 @@ def _response(
             details=details or {},
         )
     )
-    return JSONResponse(status_code=status_code, content=envelope.model_dump(mode="json"))
+    return JSONResponse(
+        status_code=status_code, content=envelope.model_dump(mode="json"), headers=headers
+    )
 
 
 async def _handle_api_error(_: Request, exc: Exception) -> JSONResponse:
     assert isinstance(exc, ApiError)  # noqa: S101 - narrowing for the type checker
-    return _response(exc.status_code, exc.code, exc.message, exc.details)
+    return _response(exc.status_code, exc.code, exc.message, exc.details, exc.headers)
 
 
 async def _handle_validation_error(_: Request, exc: Exception) -> JSONResponse:

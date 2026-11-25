@@ -1,7 +1,11 @@
 from functools import lru_cache
-from typing import Literal
+from typing import Literal, Self
 
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+Environment = Literal["local", "test", "development", "staging", "production"]
+DEV_AUTH_ENVIRONMENTS: frozenset[str] = frozenset({"local", "test"})
 
 
 class Settings(BaseSettings):
@@ -13,7 +17,7 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(env_prefix="WORKFORCE_", env_file=".env", extra="ignore")
 
-    env: Literal["local", "test", "development", "staging", "production"] = "local"
+    env: Environment = "local"
     log_level: str = "INFO"
     # The API's login role: a member of `workforce_app`, subject to row-level security.
     database_url: str = "postgresql+asyncpg://workforce_api:workforce_api@localhost:5432/workforce"
@@ -22,6 +26,28 @@ class Settings(BaseSettings):
         "postgresql+asyncpg://workforce:workforce@localhost:5432/workforce"
     )
     cors_origins: list[str] = ["http://localhost:3000"]
+
+    # Authentication (ADR-0008).
+    # "oidc": validate tokens from an external issuer (Cognito in AWS) against its JWKS.
+    # "dev": the API issues its own tokens. Allowed only in local and test environments.
+    auth_mode: Literal["oidc", "dev"] = "dev"
+    auth_issuer: str = "workforce-dev"
+    auth_audience: str = "workforce-api"
+    # Defaults to {auth_issuer}/.well-known/jwks.json, which is where Cognito publishes keys.
+    auth_jwks_url: str | None = None
+    auth_clock_skew_seconds: int = 30
+
+    @model_validator(mode="after")
+    def _dev_auth_only_where_safe(self) -> Self:
+        if self.auth_mode == "dev" and self.env not in DEV_AUTH_ENVIRONMENTS:
+            raise ValueError(
+                f"auth_mode 'dev' is not allowed when env is '{self.env}'. Use 'oidc'."
+            )
+        return self
+
+    @property
+    def jwks_url(self) -> str:
+        return self.auth_jwks_url or f"{self.auth_issuer.rstrip('/')}/.well-known/jwks.json"
 
 
 @lru_cache
