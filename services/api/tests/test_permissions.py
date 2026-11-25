@@ -1,9 +1,9 @@
 """The permission policy, pinned. A change here must be deliberate and visible in review."""
 
 from fastapi.dependencies.models import Dependant
-from fastapi.routing import APIRoute
 
 from workforce_api.auth.permissions import ROLE_PERMISSIONS, Permission, is_allowed
+from workforce_api.common.routes import iter_api_routes
 from workforce_api.config import Settings
 from workforce_api.main import create_app
 from workforce_api.modules.identity.models import Role
@@ -63,13 +63,18 @@ def _required_permissions(dependant: Dependant) -> set[Permission]:
 
 def test_every_non_public_route_declares_a_permission() -> None:
     app = create_app(Settings(env="test"))
-    missing = []
-    for route in app.routes:
-        if not isinstance(route, APIRoute):
-            continue
-        for method in route.methods:
-            if (method, route.path) in PUBLIC_ROUTES:
-                continue
-            if not _required_permissions(route.dependant):
-                missing.append(f"{method} {route.path}")
+    routes = iter_api_routes(app)
+    assert len(routes) >= 15, "route discovery looks broken"
+    missing = [
+        f"{r.method} {r.path}"
+        for r in routes
+        if (r.method, r.path) not in PUBLIC_ROUTES and not _required_permissions(r.route.dependant)
+    ]
     assert not missing, f"Routes without a required permission: {missing}"
+
+
+def test_public_routes_still_exist() -> None:
+    """Stops this allow-list from quietly keeping entries for routes that are gone."""
+    app = create_app(Settings(env="test"))
+    present = {(r.method, r.path) for r in iter_api_routes(app)}
+    assert present >= PUBLIC_ROUTES
