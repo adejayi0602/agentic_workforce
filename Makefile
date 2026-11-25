@@ -39,6 +39,7 @@ lint:
 
 test:
 	uv run pytest
+	cd apps/web && npm test
 
 test-integration:
 	uv run pytest -m integration

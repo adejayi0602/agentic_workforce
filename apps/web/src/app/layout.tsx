@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { Suspense } from "react";
+
+import { AppShell } from "@/components/app-shell";
+import { SessionProvider } from "@/lib/session";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -7,40 +10,16 @@ export const metadata: Metadata = {
   description: "Manifest-driven, multi-agent IT project delivery",
 };
 
-const NAV = [
-  { href: "/", label: "Overview" },
-  { href: "/projects", label: "Projects", sprint: 1 },
-  { href: "/manifests", label: "Manifest Studio", sprint: 5 },
-  { href: "/approvals", label: "Approvals", sprint: 9 },
-  { href: "/audit", label: "Audit", sprint: 9 },
-];
-
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en">
       <body>
-        <div className="shell">
-          <aside className="sidebar">
-            <div className="brand">Agentic Workforce</div>
-            <nav aria-label="Main">
-              <ul>
-                {NAV.map((item) => (
-                  <li key={item.href}>
-                    {item.sprint ? (
-                      <span className="nav-disabled" title={`Arrives in Sprint ${item.sprint}`}>
-                        {item.label}
-                        <small>Sprint {item.sprint}</small>
-                      </span>
-                    ) : (
-                      <Link href={item.href}>{item.label}</Link>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </nav>
-          </aside>
-          <main className="content">{children}</main>
-        </div>
+        {/* The session reads browser storage, so it renders only in the browser. */}
+        <Suspense fallback={<p className="content">Loading…</p>}>
+          <SessionProvider>
+            <AppShell>{children}</AppShell>
+          </SessionProvider>
+        </Suspense>
       </body>
     </html>
   );
