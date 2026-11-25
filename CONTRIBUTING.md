@@ -23,6 +23,7 @@
 
 - Strict TypeScript. No `any` without a comment explaining why.
 - ESLint (Next.js config) must pass, and so must `tsc --noEmit`.
+- API types come from `src/lib/api-types.ts`, generated from the API's OpenAPI document. Never hand-write a type the API already defines. After changing an API model, run `make contracts` and commit both generated files (ADR-0011).
 - The browser never talks to Temporal, the database or S3 directly. It talks only to the API (presigned S3 URLs excepted).
 
 ## Database
