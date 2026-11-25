@@ -1,7 +1,8 @@
 """Alembic environment (async, PostgreSQL).
 
-Models are added in Sprint 1. Until then `target_metadata` is None and migrations are
-written by hand.
+Runs as the schema owner (WORKFORCE_MIGRATION_DATABASE_URL), never as the API's role.
+Row-level security policies and grants are written by hand in each migration, because
+autogenerate does not see them.
 """
 
 import asyncio
@@ -12,17 +13,18 @@ from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import create_async_engine
 
 from workforce_api.config import get_settings
+from workforce_api.models import Base
 
 config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-target_metadata = None
+target_metadata = Base.metadata
 
 
 def run_migrations_offline() -> None:
     context.configure(
-        url=get_settings().database_url,
+        url=get_settings().migration_database_url,
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
@@ -32,13 +34,13 @@ def run_migrations_offline() -> None:
 
 
 def _run(connection: Connection) -> None:
-    context.configure(connection=connection, target_metadata=target_metadata)
+    context.configure(connection=connection, target_metadata=target_metadata, compare_type=True)
     with context.begin_transaction():
         context.run_migrations()
 
 
 async def run_migrations_online() -> None:
-    engine = create_async_engine(get_settings().database_url)
+    engine = create_async_engine(get_settings().migration_database_url)
     async with engine.connect() as connection:
         await connection.run_sync(_run)
     await engine.dispose()
