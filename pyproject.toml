@@ -1,0 +1,59 @@
+[project]
+name = "agentic-workforce"
+version = "0.1.0"
+description = "Agentic IT Project Management Workforce - uv workspace root"
+requires-python = ">=3.12"
+
+[tool.uv]
+package = false
+
+[tool.uv.workspace]
+members = ["packages/contracts", "services/api", "services/workers"]
+
+[tool.uv.sources]
+workforce-contracts = { workspace = true }
+workforce-api = { workspace = true }
+workforce-workers = { workspace = true }
+
+[dependency-groups]
+dev = [
+  "ruff>=0.8",
+  "mypy>=1.13",
+  "pytest>=8.3",
+  "pytest-asyncio>=0.24",
+  "httpx>=0.28",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = ["services/api/migrations/versions"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "S", "ASYNC", "RUF", "N", "SIM", "PT"]
+ignore = []
+
+[tool.ruff.lint.isort]
+known-first-party = ["workforce_contracts", "workforce_api", "workforce_workers"]
+
+[tool.ruff.lint.per-file-ignores]
+"**/tests/**" = ["S101"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+plugins = ["pydantic.mypy"]
+mypy_path = ["packages/contracts/src", "services/api/src", "services/workers/src"]
+explicit_package_bases = true
+exclude = ["migrations/"]
+
+[[tool.mypy.overrides]]
+module = ["temporalio.*"]
+ignore_missing_imports = false
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+markers = ["integration: needs network, Docker or external services"]
+addopts = "-m 'not integration' --import-mode=importlib"
+testpaths = ["packages/contracts/tests", "services/api/tests", "services/workers/tests"]

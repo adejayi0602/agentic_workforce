@@ -1,0 +1,86 @@
+# Local development stack. Not for staging or production; those run on AWS (spec §12).
+# Credentials below are local placeholders only.
+
+name: agentic-workforce
+
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: workforce
+      POSTGRES_PASSWORD: workforce
+      POSTGRES_DB: workforce
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U workforce -d workforce"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  # Temporal dev server (SQLite-backed, persisted to a volume) with the web UI on 8233.
+  # The Temporal hosting decision for AWS is ADR-0010.
+  temporal:
+    image: temporalio/temporal:latest
+    command:
+      - server
+      - start-dev
+      - --ip
+      - 0.0.0.0
+      - --db-filename
+      - /data/temporal.db
+    ports:
+      - "7233:7233"
+      - "8233:8233"
+    volumes:
+      - temporal-data:/data
+
+  # S3-compatible object storage for uploads, artefacts and evidence.
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  # Creates the buckets the API expects, with versioning on (spec §12 Files).
+  minio-setup:
+    image: minio/mc:latest
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        mc alias set local http://minio:9000 minioadmin minioadmin &&
+        for b in workforce-uploads workforce-artefacts workforce-evidence; do
+          mc mb --ignore-existing local/$$b && mc version enable local/$$b;
+        done
+    restart: "no"
+
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  postgres-data:
+  temporal-data:
+  minio-data:
