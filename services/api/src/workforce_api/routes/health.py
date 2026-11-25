@@ -1,11 +1,11 @@
 from collections.abc import Awaitable, Callable
 from typing import Annotated, Literal
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel
 
 from workforce_api import __version__
-from workforce_api.db import check_database
+from workforce_api.db import Database
 from workforce_api.errors import ApiError
 from workforce_contracts import ErrorCode
 
@@ -14,8 +14,9 @@ router = APIRouter(prefix="/health", tags=["health"])
 DatabaseCheck = Callable[[], Awaitable[bool]]
 
 
-def get_database_check() -> DatabaseCheck:
-    return check_database
+def get_database_check(request: Request) -> DatabaseCheck:
+    database: Database = request.app.state.database
+    return database.ping
 
 
 class Liveness(BaseModel):
