@@ -37,6 +37,11 @@ class Settings(BaseSettings):
     auth_jwks_url: str | None = None
     auth_clock_skew_seconds: int = 30
 
+    # Who may create organisations through the API. "closed" (the safe default) means only
+    # operators can, out of band; "open" lets any signed-in user create one and become its
+    # org admin. Local development and tests use "open".
+    organisation_creation: Literal["open", "closed"] = "closed"
+
     @model_validator(mode="after")
     def _dev_auth_only_where_safe(self) -> Self:
         if self.auth_mode == "dev" and self.env not in DEV_AUTH_ENVIRONMENTS:
