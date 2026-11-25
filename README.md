@@ -34,6 +34,7 @@ The build specification is **Engineering Specification v1.1** (kept in the Claud
 cp .env.example .env
 make setup          # install Python and web dependencies
 make up             # start Postgres, Temporal, MinIO and Redis
+make migrate        # apply database migrations (as the schema owner)
 make api            # FastAPI on http://localhost:8000  (docs at /docs)
 make worker         # Temporal worker on task queue "workforce-main"
 make web            # Next.js on http://localhost:3000
@@ -45,7 +46,8 @@ Temporal UI: http://localhost:8233 · MinIO console: http://localhost:9001
 
 ```bash
 make lint           # ruff + mypy + web lint/typecheck
-make test           # pytest for all Python packages
+make test           # pytest unit tests (no network or Docker needed)
+make test-integration  # database and Temporal tests (needs `make up`, or CI)
 make check          # everything CI runs
 ```
 
