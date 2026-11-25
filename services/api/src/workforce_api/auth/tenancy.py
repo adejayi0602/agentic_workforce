@@ -11,14 +11,15 @@ from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from typing import Annotated
 
-from fastapi import Depends, Header
+from fastapi import Depends, Header, Request
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from workforce_api.auth.dependencies import CurrentUser
 from workforce_api.auth.permissions import Permission, is_allowed, permissions_for
-from workforce_api.db import get_db_session, set_tenant_context
+from workforce_api.db import Database, get_db_session, set_tenant_context
 from workforce_api.errors import ApiError
+from workforce_api.modules.audit.service import record_denial
 from workforce_api.modules.identity.models import OrganisationMember, Role, User
 from workforce_contracts import ErrorCode
 
@@ -83,8 +84,22 @@ def require(permission: Permission) -> Callable[..., Awaitable[OrgContext]]:
 
     async def dependency(
         context: Annotated[OrgContext, Depends(get_org_context)],
+        request: Request,
     ) -> OrgContext:
         if not is_allowed(context.role, permission):
+            database: Database = request.app.state.database
+            await record_denial(
+                database,
+                organisation_id=context.organisation_id,
+                user_id=context.user.id,
+                action=permission.value,
+                resource_type="permission",
+                details={
+                    "role": context.role.value,
+                    "method": request.method,
+                    "path": request.url.path,
+                },
+            )
             raise ApiError(
                 ErrorCode.FORBIDDEN,
                 "Your role does not allow this action.",

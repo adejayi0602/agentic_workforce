@@ -13,6 +13,7 @@ import uuid
 from collections.abc import AsyncIterator, Iterator
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 import asyncpg
 import pytest
@@ -108,3 +109,100 @@ async def app_engine(test_database: DatabaseUrls) -> AsyncIterator[AsyncEngine]:
         yield engine
     finally:
         await engine.dispose()
+
+
+# ---- HTTP helpers shared by API tests ----
+
+import httpx  # noqa: E402
+from sqlalchemy import text  # noqa: E402
+
+from workforce_api.config import Settings  # noqa: E402
+from workforce_api.main import create_app  # noqa: E402
+
+
+def unique(prefix: str) -> str:
+    return f"{prefix}-{uuid.uuid4().hex[:8]}"
+
+
+class Api:
+    """Drives the API as real clients would, plus owner-level shortcuts for test setup."""
+
+    def __init__(self, client: httpx.AsyncClient, database: DatabaseUrls) -> None:
+        self.client = client
+        self.database = database
+
+    async def sign_in(self, name: str | None = None) -> dict[str, str]:
+        subject = name or unique("user")
+        r = await self.client.post(
+            "/api/v1/dev-auth/token",
+            json={"subject": subject, "email": f"{subject}@example.com", "name": subject},
+        )
+        headers = {"Authorization": f"Bearer {r.json()['access_token']}"}
+        await self.client.get("/api/v1/me", headers=headers)  # provision the user
+        return headers
+
+    async def user_id(self, headers: dict[str, str]) -> str:
+        return str((await self.client.get("/api/v1/me", headers=headers)).json()["id"])
+
+    async def create_org(self, headers: dict[str, str]) -> dict[str, str]:
+        slug = unique("org")
+        r = await self.client.post(
+            "/api/v1/organisations", json={"name": slug, "slug": slug}, headers=headers
+        )
+        assert r.status_code == 201, r.text
+        body: dict[str, str] = r.json()
+        return body
+
+    @staticmethod
+    def in_org(headers: dict[str, str], org_id: str) -> dict[str, str]:
+        return {**headers, "X-Organisation-ID": org_id}
+
+    async def add_member(self, org_id: str, user_id: str, role: str) -> None:
+        """Invitations arrive in #11; until then tests add members as the schema owner."""
+        owner = create_async_engine(self.database.owner_url)
+        try:
+            async with owner.begin() as conn:
+                await conn.execute(
+                    text("SELECT set_config('app.organisation_id', :o, true)"), {"o": org_id}
+                )
+                await conn.execute(
+                    text(
+                        "INSERT INTO organisation_members (organisation_id, user_id, role) "
+                        "VALUES (:o, :u, :r)"
+                    ),
+                    {"o": org_id, "u": user_id, "r": role},
+                )
+        finally:
+            await owner.dispose()
+
+    async def owner_read(self, table: str, where: str, params: dict[str, str]) -> list[Any]:
+        """Read raw rows as the schema owner, with RLS lifted inside a rolled-back transaction.
+
+        For asserting on tables the API role cannot read (such as the outbox).
+        """
+        owner = create_async_engine(self.database.owner_url)
+        try:
+            async with owner.connect() as conn:
+                transaction = await conn.begin()
+                await conn.execute(text(f"ALTER TABLE {table} NO FORCE ROW LEVEL SECURITY"))
+                rows = await conn.execute(text(f"SELECT * FROM {table} WHERE {where}"), params)  # noqa: S608
+                result = [r._mapping for r in rows]
+                await transaction.rollback()
+                return result
+        finally:
+            await owner.dispose()
+
+
+@pytest.fixture
+async def api(test_database: DatabaseUrls) -> AsyncIterator[Api]:
+    settings = Settings(
+        env="test",
+        organisation_creation="open",
+        database_url=test_database.app_url.render_as_string(hide_password=False),
+    )
+    app = create_app(settings)
+    async with (
+        app.router.lifespan_context(app),
+        httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as c,
+    ):
+        yield Api(c, test_database)

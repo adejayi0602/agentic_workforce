@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from workforce_api.auth.tenancy import OrgContext
 from workforce_api.db import set_tenant_context
 from workforce_api.errors import ApiError
+from workforce_api.modules.audit import service as audit
 from workforce_api.modules.identity.models import Organisation, OrganisationMember, Role, User
 from workforce_contracts import ErrorCode
 
@@ -46,6 +47,24 @@ async def create_organisation(
         ) from exc
     session.add(OrganisationMember(organisation_id=org_id, user_id=creator.id, role=Role.ORG_ADMIN))
     await session.flush()
+    await audit.record(
+        session,
+        organisation_id=org_id,
+        actor_type="user",
+        actor_id=str(creator.id),
+        action="organisation.create",
+        resource_type="organisation",
+        resource_id=str(org_id),
+        details={"slug": slug},
+    )
+    await audit.emit(
+        session,
+        organisation_id=org_id,
+        aggregate_type="organisation",
+        aggregate_id=org_id,
+        event_type="organisation.created",
+        payload={"organisation_id": str(org_id), "created_by": str(creator.id)},
+    )
     await session.refresh(organisation)
     return organisation
 
@@ -83,8 +102,17 @@ async def change_member_role(
     member = await _locked_member(session, context, user_id)
     if member.role == Role.ORG_ADMIN and role != Role.ORG_ADMIN:
         await _ensure_another_admin(session, context, excluding=user_id)
+    previous = Role(member.role)
     member.role = role
     await session.flush()
+    await _audit_member_change(
+        session,
+        context,
+        user_id,
+        action="member.role_change",
+        event_type="member.role_changed",
+        facts={"from": previous.value, "to": role.value},
+    )
     user = await session.get(User, user_id)
     assert user is not None  # noqa: S101 - visible as a member of the current organisation
     return MemberView(user=user, role=role)
@@ -94,8 +122,17 @@ async def remove_member(session: AsyncSession, context: OrgContext, *, user_id: 
     member = await _locked_member(session, context, user_id)
     if member.role == Role.ORG_ADMIN:
         await _ensure_another_admin(session, context, excluding=user_id)
+    role = member.role
     await session.delete(member)
     await session.flush()
+    await _audit_member_change(
+        session,
+        context,
+        user_id,
+        action="member.remove",
+        event_type="member.removed",
+        facts={"role": role},
+    )
 
 
 async def _locked_member(
@@ -141,3 +178,32 @@ async def _ensure_another_admin(
             "An organisation must keep at least one org admin.",
             status_code=409,
         )
+
+
+async def _audit_member_change(
+    session: AsyncSession,
+    context: OrgContext,
+    user_id: uuid.UUID,
+    *,
+    action: str,
+    event_type: str,
+    facts: dict[str, str],
+) -> None:
+    await audit.record(
+        session,
+        organisation_id=context.organisation_id,
+        actor_type="user",
+        actor_id=str(context.user.id),
+        action=action,
+        resource_type="member",
+        resource_id=str(user_id),
+        details=facts,
+    )
+    await audit.emit(
+        session,
+        organisation_id=context.organisation_id,
+        aggregate_type="member",
+        aggregate_id=user_id,
+        event_type=event_type,
+        payload={"user_id": str(user_id), **facts},
+    )
