@@ -15,5 +15,6 @@ Each ADR records one decision: the context, the decision and its consequences. A
 | [0009](0009-document-extraction.md) | Document extraction | Accepted |
 | [0010](0010-temporal-hosting.md) | Temporal hosting | Proposed |
 | [0011](0011-web-types-from-openapi.md) | Web types generated from the API's OpenAPI document | Accepted |
+| [0012](0012-document-intake.md) | Document intake: formats, limits, scanning and lifecycle | Accepted |
 
 Use [template.md](template.md) for new records.
