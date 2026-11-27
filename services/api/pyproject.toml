@@ -15,6 +15,7 @@ dependencies = [
   "pyjwt[crypto]>=2.10",
   "email-validator>=2.2",
   "boto3>=1.35",
+  "temporalio>=1.9",
 ]
 
 [build-system]

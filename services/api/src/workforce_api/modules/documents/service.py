@@ -6,6 +6,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from sqlalchemy import func, select
+from sqlalchemy.dialects.postgresql import distinct_on
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from workforce_api.auth.tenancy import OrgContext
@@ -15,7 +16,11 @@ from workforce_api.errors import ApiError
 from workforce_api.modules.audit import service as audit
 from workforce_api.modules.documents.file_policy import MAX_BYTES, AcceptedFile
 from workforce_api.modules.documents.lifecycle import VersionStatus, transition
-from workforce_api.modules.documents.models import DocumentVersion, ProjectDocument
+from workforce_api.modules.documents.models import (
+    DocumentProcessingRun,
+    DocumentVersion,
+    ProjectDocument,
+)
 from workforce_api.modules.projects.models import Project
 from workforce_api.storage import ObjectStore, PresignedUpload
 from workforce_contracts import ErrorCode
@@ -203,6 +208,43 @@ async def get_version(
     return version
 
 
+async def latest_runs(
+    session: AsyncSession, version_ids: list[uuid.UUID]
+) -> dict[uuid.UUID, DocumentProcessingRun]:
+    if not version_ids:
+        return {}
+    rows = await session.scalars(
+        select(DocumentProcessingRun)
+        .where(DocumentProcessingRun.document_version_id.in_(version_ids))
+        .ext(distinct_on(DocumentProcessingRun.document_version_id))
+        .order_by(DocumentProcessingRun.document_version_id, DocumentProcessingRun.attempt.desc())
+    )
+    return {r.document_version_id: r for r in rows}
+
+
+REPROCESSABLE = {
+    VersionStatus.UPLOADED,
+    VersionStatus.SCANNING,
+    VersionStatus.SCAN_FAILED,
+    VersionStatus.CLEAN,
+    VersionStatus.PROCESSING_FAILED,
+}
+
+
+async def request_processing(
+    session: AsyncSession, context: OrgContext, document: ProjectDocument, version: DocumentVersion
+) -> None:
+    """Check a (re)start is allowed and audit the request. The caller starts the workflow."""
+    if VersionStatus(version.status) not in REPROCESSABLE:
+        raise ApiError(
+            ErrorCode.INVALID_STATE,
+            f"This version is {version.status.replace('_', ' ')} and can't be processed now.",
+            status_code=409,
+            details={"status": version.status},
+        )
+    await _audit(session, context, document, version, "document.process_request", {})
+
+
 # ---- helpers ----
 
 
@@ -253,7 +295,7 @@ async def _latest_versions(
     rows = await session.scalars(
         select(DocumentVersion)
         .where(DocumentVersion.document_id.in_(document_ids))
-        .distinct(DocumentVersion.document_id)
+        .ext(distinct_on(DocumentVersion.document_id))
         .order_by(DocumentVersion.document_id, DocumentVersion.version.desc())
     )
     return {v.document_id: v for v in rows}

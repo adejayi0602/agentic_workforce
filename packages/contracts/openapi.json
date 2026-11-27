@@ -83,6 +83,72 @@
         "title": "AuditEventOut",
         "type": "object"
       },
+      "Block": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/BlockKind"
+          },
+          "level": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Level"
+          },
+          "location": {
+            "$ref": "#/components/schemas/Location"
+          },
+          "rows": {
+            "anyOf": [
+              {
+                "items": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rows"
+          },
+          "text": {
+            "default": "",
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "location"
+        ],
+        "title": "Block",
+        "type": "object"
+      },
+      "BlockKind": {
+        "enum": [
+          "heading",
+          "paragraph",
+          "list_item",
+          "table",
+          "slide_title",
+          "note"
+        ],
+        "title": "BlockKind",
+        "type": "string"
+      },
       "DevTokenRequest": {
         "properties": {
           "email": {
@@ -296,6 +362,22 @@
         "title": "DocumentOut",
         "type": "object"
       },
+      "Extraction": {
+        "properties": {
+          "document": {
+            "$ref": "#/components/schemas/NormalisedDocument"
+          },
+          "run": {
+            "$ref": "#/components/schemas/RunOut"
+          }
+        },
+        "required": [
+          "run",
+          "document"
+        ],
+        "title": "Extraction",
+        "type": "object"
+      },
       "FileDeclaration": {
         "additionalProperties": false,
         "properties": {
@@ -359,6 +441,96 @@
           "version"
         ],
         "title": "Liveness",
+        "type": "object"
+      },
+      "Location": {
+        "properties": {
+          "cell_range": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cell Range"
+          },
+          "heading_path": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Heading Path",
+            "type": "array"
+          },
+          "line": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Line"
+          },
+          "page": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page"
+          },
+          "paragraph": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Paragraph"
+          },
+          "sheet": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sheet"
+          },
+          "slide": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slide"
+          },
+          "table": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Table"
+          }
+        },
+        "title": "Location",
         "type": "object"
       },
       "Me": {
@@ -489,6 +661,51 @@
         "title": "MembershipOut",
         "type": "object"
       },
+      "NormalisedDocument": {
+        "properties": {
+          "blocks": {
+            "items": {
+              "$ref": "#/components/schemas/Block"
+            },
+            "title": "Blocks",
+            "type": "array"
+          },
+          "needs_ocr": {
+            "default": false,
+            "title": "Needs Ocr",
+            "type": "boolean"
+          },
+          "parser": {
+            "$ref": "#/components/schemas/Parser"
+          },
+          "schema_version": {
+            "default": "1.0",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "source": {
+            "$ref": "#/components/schemas/Source"
+          },
+          "stats": {
+            "$ref": "#/components/schemas/Stats"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Warnings",
+            "type": "array"
+          }
+        },
+        "required": [
+          "source",
+          "parser",
+          "blocks",
+          "stats"
+        ],
+        "title": "NormalisedDocument",
+        "type": "object"
+      },
       "OrganisationCreate": {
         "properties": {
           "name": {
@@ -608,6 +825,54 @@
           "next_cursor"
         ],
         "title": "Page[ProjectOut]",
+        "type": "object"
+      },
+      "Parser": {
+        "properties": {
+          "library": {
+            "title": "Library",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "version",
+          "library"
+        ],
+        "title": "Parser",
+        "type": "object"
+      },
+      "ProcessingStarted": {
+        "properties": {
+          "started": {
+            "title": "Started",
+            "type": "boolean"
+          },
+          "workflow_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workflow Id"
+          }
+        },
+        "required": [
+          "workflow_id",
+          "started"
+        ],
+        "title": "ProcessingStarted",
         "type": "object"
       },
       "ProjectCreate": {
@@ -831,6 +1096,183 @@
         "title": "Role",
         "type": "string"
       },
+      "RunOut": {
+        "properties": {
+          "attempt": {
+            "title": "Attempt",
+            "type": "integer"
+          },
+          "error_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Code"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "parser_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parser Name"
+          },
+          "parser_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parser Version"
+          },
+          "started_at": {
+            "format": "date-time",
+            "title": "Started At",
+            "type": "string"
+          },
+          "stats": {
+            "additionalProperties": true,
+            "title": "Stats",
+            "type": "object"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "attempt",
+          "status",
+          "parser_name",
+          "parser_version",
+          "error_code",
+          "stats",
+          "started_at",
+          "finished_at"
+        ],
+        "title": "RunOut",
+        "type": "object"
+      },
+      "Source": {
+        "properties": {
+          "filename": {
+            "title": "Filename",
+            "type": "string"
+          },
+          "media_type": {
+            "title": "Media Type",
+            "type": "string"
+          },
+          "sha256": {
+            "title": "Sha256",
+            "type": "string"
+          },
+          "size_bytes": {
+            "title": "Size Bytes",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "filename",
+          "media_type",
+          "sha256",
+          "size_bytes"
+        ],
+        "title": "Source",
+        "type": "object"
+      },
+      "Stats": {
+        "properties": {
+          "blocks": {
+            "default": 0,
+            "title": "Blocks",
+            "type": "integer"
+          },
+          "characters": {
+            "default": 0,
+            "title": "Characters",
+            "type": "integer"
+          },
+          "headings": {
+            "default": 0,
+            "title": "Headings",
+            "type": "integer"
+          },
+          "pages": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pages"
+          },
+          "paragraphs": {
+            "default": 0,
+            "title": "Paragraphs",
+            "type": "integer"
+          },
+          "sheets": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sheets"
+          },
+          "slides": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slides"
+          },
+          "tables": {
+            "default": 0,
+            "title": "Tables",
+            "type": "integer"
+          }
+        },
+        "title": "Stats",
+        "type": "object"
+      },
       "UploadOut": {
         "properties": {
           "expires_at": {
@@ -939,6 +1381,16 @@
             "format": "uuid",
             "title": "Id",
             "type": "string"
+          },
+          "last_run": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RunOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "media_type": {
             "title": "Media Type",
@@ -2296,7 +2748,7 @@
     },
     "/api/v1/projects/{project_id}/documents/{document_id}/versions/{version_id}/complete": {
       "post": {
-        "description": "Confirm the upload. The API checks the stored file's size and SHA-256 itself.",
+        "description": "Confirm the upload. The API checks the stored file's size and SHA-256 itself, then\nstarts scanning and processing.",
         "operationId": "complete_upload_api_v1_projects__project_id__documents__document_id__versions__version_id__complete_post",
         "parameters": [
           {
@@ -2376,6 +2828,180 @@
           }
         ],
         "summary": "Complete Upload",
+        "tags": [
+          "documents"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/documents/{document_id}/versions/{version_id}/extraction": {
+      "get": {
+        "description": "The structured content extracted from a processed version, with source locations.",
+        "operationId": "get_extraction_api_v1_projects__project_id__documents__document_id__versions__version_id__extraction_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "document_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Document Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Version Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "The organisation this request acts in. The caller must be a member.",
+            "in": "header",
+            "name": "X-Organisation-ID",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The organisation this request acts in. The caller must be a member.",
+              "title": "X-Organisation-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Extraction"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Extraction",
+        "tags": [
+          "documents"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/documents/{document_id}/versions/{version_id}/process": {
+      "post": {
+        "description": "Start or retry scanning and processing (for example after a failure).",
+        "operationId": "process_version_api_v1_projects__project_id__documents__document_id__versions__version_id__process_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "document_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Document Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Version Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "The organisation this request acts in. The caller must be a member.",
+            "in": "header",
+            "name": "X-Organisation-ID",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The organisation this request acts in. The caller must be a member.",
+              "title": "X-Organisation-Id"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProcessingStarted"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Process Version",
         "tags": [
           "documents"
         ]

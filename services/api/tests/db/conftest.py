@@ -135,12 +135,34 @@ def unique(prefix: str) -> str:
     return f"{prefix}-{uuid.uuid4().hex[:8]}"
 
 
+class RecordingWorkflows:
+    """Stands in for Temporal: records which workflows the API asked to start."""
+
+    def __init__(self) -> None:
+        self.started: list[dict[str, str]] = []
+        self.fail = False
+
+    async def start_document_processing(self, *, organisation_id: Any, version_id: Any) -> str:
+        if self.fail:
+            raise ConnectionError("Temporal is unreachable")
+        self.started.append(
+            {"organisation_id": str(organisation_id), "version_id": str(version_id)}
+        )
+        return f"process-document-{version_id}"
+
+    async def close(self) -> None:
+        return None
+
+
 class Api:
     """Drives the API as real clients would, plus owner-level shortcuts for test setup."""
 
-    def __init__(self, client: httpx.AsyncClient, database: DatabaseUrls) -> None:
+    def __init__(
+        self, client: httpx.AsyncClient, database: DatabaseUrls, workflows: RecordingWorkflows
+    ) -> None:
         self.client = client
         self.database = database
+        self.workflows = workflows
 
     async def upload_document(
         self,
@@ -278,8 +300,10 @@ async def api(test_database: DatabaseUrls, s3_endpoint: str) -> AsyncIterator[Ap
         s3_endpoint_url=s3_endpoint,
     )
     app = create_app(settings)
+    workflows = RecordingWorkflows()
+    app.state.workflows = workflows
     async with (
         app.router.lifespan_context(app),
         httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as c,
     ):
-        yield Api(c, test_database)
+        yield Api(c, test_database, workflows)

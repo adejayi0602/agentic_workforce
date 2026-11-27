@@ -314,9 +314,50 @@ export interface paths {
         put?: never;
         /**
          * Complete Upload
-         * @description Confirm the upload. The API checks the stored file's size and SHA-256 itself.
+         * @description Confirm the upload. The API checks the stored file's size and SHA-256 itself, then
+         *     starts scanning and processing.
          */
         post: operations["complete_upload_api_v1_projects__project_id__documents__document_id__versions__version_id__complete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/documents/{document_id}/versions/{version_id}/extraction": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Extraction
+         * @description The structured content extracted from a processed version, with source locations.
+         */
+        get: operations["get_extraction_api_v1_projects__project_id__documents__document_id__versions__version_id__extraction_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/documents/{document_id}/versions/{version_id}/process": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Process Version
+         * @description Start or retry scanning and processing (for example after a failure).
+         */
+        post: operations["process_version_api_v1_projects__project_id__documents__document_id__versions__version_id__process_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -363,6 +404,27 @@ export interface components {
             /** Resource Type */
             resource_type: string;
         };
+        /** Block */
+        Block: {
+            /** Id */
+            id: string;
+            kind: components["schemas"]["BlockKind"];
+            /** Level */
+            level?: number | null;
+            location: components["schemas"]["Location"];
+            /** Rows */
+            rows?: string[][] | null;
+            /**
+             * Text
+             * @default
+             */
+            text: string;
+        };
+        /**
+         * BlockKind
+         * @enum {string}
+         */
+        BlockKind: "heading" | "paragraph" | "list_item" | "table" | "slide_title" | "note";
         /** DevTokenRequest */
         DevTokenRequest: {
             /** Email */
@@ -455,6 +517,11 @@ export interface components {
             /** Title */
             title: string;
         };
+        /** Extraction */
+        Extraction: {
+            document: components["schemas"]["NormalisedDocument"];
+            run: components["schemas"]["RunOut"];
+        };
         /** FileDeclaration */
         FileDeclaration: {
             /**
@@ -487,6 +554,25 @@ export interface components {
             status: "ok";
             /** Version */
             version: string;
+        };
+        /** Location */
+        Location: {
+            /** Cell Range */
+            cell_range?: string | null;
+            /** Heading Path */
+            heading_path?: string[];
+            /** Line */
+            line?: number | null;
+            /** Page */
+            page?: number | null;
+            /** Paragraph */
+            paragraph?: number | null;
+            /** Sheet */
+            sheet?: string | null;
+            /** Slide */
+            slide?: number | null;
+            /** Table */
+            table?: number | null;
         };
         /** Me */
         Me: {
@@ -532,6 +618,26 @@ export interface components {
             /** Slug */
             slug: string;
         };
+        /** NormalisedDocument */
+        NormalisedDocument: {
+            /** Blocks */
+            blocks: components["schemas"]["Block"][];
+            /**
+             * Needs Ocr
+             * @default false
+             */
+            needs_ocr: boolean;
+            parser: components["schemas"]["Parser"];
+            /**
+             * Schema Version
+             * @default 1.0
+             */
+            schema_version: string;
+            source: components["schemas"]["Source"];
+            stats: components["schemas"]["Stats"];
+            /** Warnings */
+            warnings?: string[];
+        };
         /** OrganisationCreate */
         OrganisationCreate: {
             /** Name */
@@ -572,6 +678,22 @@ export interface components {
             items: components["schemas"]["ProjectOut"][];
             /** Next Cursor */
             next_cursor: string | null;
+        };
+        /** Parser */
+        Parser: {
+            /** Library */
+            library: string;
+            /** Name */
+            name: string;
+            /** Version */
+            version: string;
+        };
+        /** ProcessingStarted */
+        ProcessingStarted: {
+            /** Started */
+            started: boolean;
+            /** Workflow Id */
+            workflow_id: string | null;
         };
         /** ProjectCreate */
         ProjectCreate: {
@@ -661,6 +783,80 @@ export interface components {
          * @enum {string}
          */
         Role: "org_admin" | "project_owner" | "project_manager" | "member" | "auditor";
+        /** RunOut */
+        RunOut: {
+            /** Attempt */
+            attempt: number;
+            /** Error Code */
+            error_code: string | null;
+            /** Finished At */
+            finished_at: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Parser Name */
+            parser_name: string | null;
+            /** Parser Version */
+            parser_version: string | null;
+            /**
+             * Started At
+             * Format: date-time
+             */
+            started_at: string;
+            /** Stats */
+            stats: {
+                [key: string]: unknown;
+            };
+            /** Status */
+            status: string;
+        };
+        /** Source */
+        Source: {
+            /** Filename */
+            filename: string;
+            /** Media Type */
+            media_type: string;
+            /** Sha256 */
+            sha256: string;
+            /** Size Bytes */
+            size_bytes: number;
+        };
+        /** Stats */
+        Stats: {
+            /**
+             * Blocks
+             * @default 0
+             */
+            blocks: number;
+            /**
+             * Characters
+             * @default 0
+             */
+            characters: number;
+            /**
+             * Headings
+             * @default 0
+             */
+            headings: number;
+            /** Pages */
+            pages?: number | null;
+            /**
+             * Paragraphs
+             * @default 0
+             */
+            paragraphs: number;
+            /** Sheets */
+            sheets?: number | null;
+            /** Slides */
+            slides?: number | null;
+            /**
+             * Tables
+             * @default 0
+             */
+            tables: number;
+        };
         /** UploadOut */
         UploadOut: {
             /**
@@ -713,6 +909,7 @@ export interface components {
              * Format: uuid
              */
             id: string;
+            last_run?: components["schemas"]["RunOut"] | null;
             /** Media Type */
             media_type: string;
             /** Processed At */
@@ -1391,6 +1588,78 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["VersionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_extraction_api_v1_projects__project_id__documents__document_id__versions__version_id__extraction_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description The organisation this request acts in. The caller must be a member. */
+                "X-Organisation-ID"?: string | null;
+            };
+            path: {
+                project_id: string;
+                document_id: string;
+                version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Extraction"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    process_version_api_v1_projects__project_id__documents__document_id__versions__version_id__process_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description The organisation this request acts in. The caller must be a member. */
+                "X-Organisation-ID"?: string | null;
+            };
+            path: {
+                project_id: string;
+                document_id: string;
+                version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProcessingStarted"];
                 };
             };
             /** @description Validation Error */
