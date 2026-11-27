@@ -5,6 +5,9 @@ description = "Temporal workers for the Agentic IT Workforce platform"
 requires-python = ">=3.12"
 dependencies = [
   "workforce-contracts",
+  "workforce-intake",
+  # Shares models, lifecycle and audit with the API (modular monolith, ADR-0002).
+  "workforce-api",
   "temporalio>=1.9",
   "pydantic-settings>=2.6",
 ]

@@ -11,3 +11,8 @@ CREATE ROLE workforce_api LOGIN PASSWORD 'workforce_api' IN ROLE workforce_app;
 
 -- The local superuser created by the image is also the schema owner, and superusers bypass
 -- row-level security. That is acceptable for migrations only: the API never connects as it.
+
+-- workforce_worker  group role the Temporal workers act through; subject to RLS
+-- workforce_worker_login  the workers' login role
+CREATE ROLE workforce_worker NOLOGIN;
+CREATE ROLE workforce_worker_login LOGIN PASSWORD 'workforce_worker' IN ROLE workforce_worker;

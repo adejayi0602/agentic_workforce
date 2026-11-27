@@ -1,0 +1,13 @@
+[project]
+name = "workforce-intake"
+version = "0.1.0"
+description = "Document intake libraries: malware scanners and document parsers. Pure: no database."
+requires-python = ">=3.12"
+dependencies = ["pydantic>=2.9", "boto3>=1.35"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/workforce_intake"]

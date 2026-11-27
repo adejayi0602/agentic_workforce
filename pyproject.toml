@@ -8,10 +8,11 @@ requires-python = ">=3.12"
 package = false
 
 [tool.uv.workspace]
-members = ["packages/contracts", "services/api", "services/workers"]
+members = ["packages/contracts", "packages/intake", "services/api", "services/workers"]
 
 [tool.uv.sources]
 workforce-contracts = { workspace = true }
+workforce-intake = { workspace = true }
 workforce-api = { workspace = true }
 workforce-workers = { workspace = true }
 
@@ -35,7 +36,7 @@ select = ["E", "F", "W", "I", "B", "UP", "S", "ASYNC", "RUF", "N", "SIM", "PT"]
 ignore = []
 
 [tool.ruff.lint.isort]
-known-first-party = ["workforce_contracts", "workforce_api", "workforce_workers"]
+known-first-party = ["workforce_contracts", "workforce_intake", "workforce_api", "workforce_workers"]
 
 [tool.ruff.lint.per-file-ignores]
 "**/tests/**" = ["S101"]
@@ -44,7 +45,7 @@ known-first-party = ["workforce_contracts", "workforce_api", "workforce_workers"
 python_version = "3.12"
 strict = true
 plugins = ["pydantic.mypy"]
-mypy_path = ["packages/contracts/src", "services/api/src", "services/workers/src"]
+mypy_path = ["packages/contracts/src", "packages/intake/src", "services/api/src", "services/workers/src"]
 explicit_package_bases = true
 exclude = ["migrations/"]
 
@@ -62,4 +63,9 @@ asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 markers = ["integration: needs network, Docker or external services"]
 addopts = "-m 'not integration' --import-mode=importlib"
-testpaths = ["packages/contracts/tests", "services/api/tests", "services/workers/tests"]
+testpaths = [
+  "packages/contracts/tests",
+  "packages/intake/tests",
+  "services/api/tests",
+  "services/workers/tests",
+]
