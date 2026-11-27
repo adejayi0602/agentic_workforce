@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
 import { AuditTable } from "@/components/audit-table";
+import { DocumentsPanel } from "@/components/documents-panel";
 import { ErrorNotice } from "@/components/error-notice";
 import { RequireSession } from "@/components/require-session";
 import { ApiError, apiGet, apiRequest, type AuditPage, type Project, type ProjectUpdate } from "@/lib/api";
@@ -127,6 +128,8 @@ function ProjectDetail() {
           </div>
         </section>
       )}
+
+      <DocumentsPanel projectId={project.id} archived={project.status !== "active"} />
 
       {audit ? (
         <section className="card" aria-labelledby="history">

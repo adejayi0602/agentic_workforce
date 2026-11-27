@@ -16,5 +16,6 @@ Each ADR records one decision: the context, the decision and its consequences. A
 | [0010](0010-temporal-hosting.md) | Temporal hosting | Proposed |
 | [0011](0011-web-types-from-openapi.md) | Web types generated from the API's OpenAPI document | Accepted |
 | [0012](0012-document-intake.md) | Document intake: formats, limits, scanning and lifecycle | Accepted |
+| [0013](0013-local-s3-seaweedfs.md) | Local and CI object storage: SeaweedFS replaces MinIO | Accepted |
 
 Use [template.md](template.md) for new records.

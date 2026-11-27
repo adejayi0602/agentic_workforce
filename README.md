@@ -20,7 +20,7 @@ The build specification is **Engineering Specification v1.1** (kept in the Claud
 | `infra/terraform` | AWS infrastructure (from Sprint 1 onward) |
 | `docs/adr` | Architecture decision records |
 | `docs/threat-model.md` | Threat model draft for the Sprint 0 workshop |
-| `compose.yaml` | Local stack: PostgreSQL, Temporal dev server, MinIO (S3), Redis |
+| `compose.yaml` | Local stack: PostgreSQL, Temporal dev server, SeaweedFS (S3), Redis |
 
 ## Prerequisites
 
@@ -33,14 +33,14 @@ The build specification is **Engineering Specification v1.1** (kept in the Claud
 ```bash
 cp .env.example .env
 make setup          # install Python and web dependencies
-make up             # start Postgres, Temporal, MinIO and Redis
+make up             # start Postgres, Temporal, S3 (SeaweedFS) and Redis
 make migrate        # apply database migrations (as the schema owner)
 make api            # FastAPI on http://localhost:8000  (docs at /docs)
-make worker         # Temporal worker on task queue "workforce-main"
+make worker         # Temporal worker: scans and processes uploaded documents
 make web            # Next.js on http://localhost:3000
 ```
 
-Temporal UI: http://localhost:8233 · MinIO console: http://localhost:9001
+Temporal UI: http://localhost:8233 · S3 endpoint: http://localhost:9000
 
 ## Checks
 

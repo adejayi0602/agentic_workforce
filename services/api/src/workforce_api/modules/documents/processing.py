@@ -15,6 +15,8 @@ from anyio import to_thread
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+# Registers every table, so foreign keys resolve when this runs outside the API (the worker).
+import workforce_api.models  # noqa: F401
 from workforce_api.modules.audit import service as audit
 from workforce_api.modules.documents import scan_gate
 from workforce_api.modules.documents.file_policy import MAX_BYTES

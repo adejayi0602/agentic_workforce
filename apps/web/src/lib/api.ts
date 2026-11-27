@@ -18,6 +18,14 @@ export type ProjectUpdate = Schemas["ProjectUpdate"];
 export type ProjectPage = Schemas["Page_ProjectOut_"];
 export type AuditEvent = Schemas["AuditEventOut"];
 export type AuditPage = Schemas["Page_AuditEventOut_"];
+export type DocumentSummary = Schemas["DocumentOut"];
+export type DocumentDetail = Schemas["DocumentDetail"];
+export type DocumentVersion = Schemas["VersionOut"];
+export type ProcessingRun = Schemas["RunOut"];
+export type UploadStarted = Schemas["UploadStarted"];
+export type Extraction = Schemas["Extraction"];
+export type ExtractedBlock = Schemas["Block"];
+export type BlockLocation = Schemas["Location"];
 
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
 

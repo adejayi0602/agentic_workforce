@@ -108,6 +108,9 @@ jobs:
       PGPASSWORD: postgres
       WORKFORCE_MIGRATION_DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/workforce
       E2E_DATABASE_URL: postgresql+asyncpg://workforce_api:workforce_api@localhost:5432/workforce
+      E2E_S3_ENDPOINT_URL: http://localhost:9000
+      AWS_ACCESS_KEY_ID: local
+      AWS_SECRET_ACCESS_KEY: local
       NEXT_TELEMETRY_DISABLED: "1"
     steps:
       - uses: actions/checkout@v7
@@ -130,6 +133,38 @@ jobs:
       - name: Migrate
         working-directory: services/api
         run: uv run alembic upgrade head
+      - name: Start S3 (SeaweedFS, as in compose.yaml) and the Temporal dev server
+        run: |
+          docker run -d --name s3 -p 9000:9000 chrislusf/seaweedfs:4.54 \
+            server -dir=/data -s3 -s3.port=9000 -master.volumeSizeLimitMB=100
+          docker run -d --name temporal -p 7233:7233 \
+            temporalio/temporal:latest server start-dev --ip 0.0.0.0
+          for i in $(seq 60); do
+            (nc -z localhost 9000 && nc -z localhost 7233) && break; sleep 2
+          done
+      - name: Create buckets
+        run: |
+          uv run python - <<'PY'
+          import time, boto3
+          s3 = boto3.client("s3", endpoint_url="http://localhost:9000", region_name="eu-west-1")
+          for attempt in range(30):
+              try:
+                  for bucket in ("workforce-uploads", "workforce-artefacts"):
+                      s3.create_bucket(Bucket=bucket)
+                  break
+              except Exception as exc:
+                  print("waiting for S3:", exc); time.sleep(2)
+          PY
+      - name: Start the document worker
+        env:
+          WORKFORCE_ENV: test
+          WORKFORCE_SCANNER: eicar
+          WORKFORCE_WORKER_DATABASE_URL: postgresql+asyncpg://workforce_worker_login:workforce_worker@localhost:5432/workforce
+          WORKFORCE_S3_ENDPOINT_URL: http://localhost:9000
+        run: |
+          nohup uv run --package workforce-workers python -m workforce_workers.worker > worker.log 2>&1 &
+          sleep 5
+          cat worker.log
       - name: Build web
         working-directory: apps/web
         run: |
@@ -141,6 +176,12 @@ jobs:
       - name: Run end-to-end tests
         working-directory: apps/web
         run: npm run e2e
+      - name: Service logs
+        if: failure()
+        run: |
+          docker logs s3 2>&1 | tail -40 || true
+          docker logs temporal 2>&1 | tail -20 || true
+          cat worker.log || true
       - name: Upload report, traces and screenshots
         if: failure()
         uses: actions/upload-artifact@v7
@@ -149,4 +190,5 @@ jobs:
           path: |
             apps/web/playwright-report
             apps/web/test-results
+            worker.log
           retention-days: 7

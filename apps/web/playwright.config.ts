@@ -21,6 +21,8 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [["list"], ["html", { open: "never" }]] : "list",
+  // The first test of a run hits cold servers; 5 s (the default) proved too tight on CI.
+  expect: { timeout: 10_000 },
   use: {
     baseURL: `http://localhost:${WEB_PORT}`,
     trace: "retain-on-failure",
@@ -49,6 +51,7 @@ export default defineConfig({
         WORKFORCE_ORGANISATION_CREATION: "open",
         WORKFORCE_CORS_ORIGINS: `["http://localhost:${WEB_PORT}"]`,
         ...(process.env.E2E_DATABASE_URL ? { WORKFORCE_DATABASE_URL: process.env.E2E_DATABASE_URL } : {}),
+        ...(process.env.E2E_S3_ENDPOINT_URL ? { WORKFORCE_S3_ENDPOINT_URL: process.env.E2E_S3_ENDPOINT_URL } : {}),
       },
     },
     {
