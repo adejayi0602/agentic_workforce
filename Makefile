@@ -1,4 +1,4 @@
-.PHONY: setup up down api worker web lint test test-integration format check migrate contracts
+.PHONY: setup up down api worker web lint test test-integration format check migrate contracts e2e
 
 setup:
 	uv sync --all-packages
@@ -40,6 +40,10 @@ lint:
 test:
 	uv run pytest
 	cd apps/web && npm test
+
+# Browser tests against the real API and web build. Needs `make up && make migrate`.
+e2e:
+	cd apps/web && npm run build && npm run e2e
 
 test-integration:
 	uv run pytest -m integration

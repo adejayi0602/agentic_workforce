@@ -89,3 +89,64 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - run: docker compose config --quiet
+
+  e2e:
+    name: End-to-end (browser)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s --health-timeout 3s --health-retries 20
+    env:
+      PGPASSWORD: postgres
+      WORKFORCE_MIGRATION_DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/workforce
+      E2E_DATABASE_URL: postgresql+asyncpg://workforce_api:workforce_api@localhost:5432/workforce
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - run: uv sync --all-packages --locked
+      - name: Create database and roles (same script as the local stack)
+        run: |
+          psql -h localhost -U postgres -c "CREATE DATABASE workforce"
+          psql -h localhost -U postgres -d workforce -f infra/local/postgres-init.sql
+      - name: Migrate
+        working-directory: services/api
+        run: uv run alembic upgrade head
+      - name: Build web
+        working-directory: apps/web
+        run: |
+          npm ci
+          npm run build
+      - name: Install Chromium
+        working-directory: apps/web
+        run: npx playwright install --with-deps chromium
+      - name: Run end-to-end tests
+        working-directory: apps/web
+        run: npm run e2e
+      - name: Upload report, traces and screenshots
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
+          path: |
+            apps/web/playwright-report
+            apps/web/test-results
+          retention-days: 7
