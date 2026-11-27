@@ -108,6 +108,9 @@ jobs:
       PGPASSWORD: postgres
       WORKFORCE_MIGRATION_DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/workforce
       E2E_DATABASE_URL: postgresql+asyncpg://workforce_api:workforce_api@localhost:5432/workforce
+      E2E_S3_ENDPOINT_URL: http://localhost:9000
+      AWS_ACCESS_KEY_ID: minioadmin
+      AWS_SECRET_ACCESS_KEY: minioadmin
       NEXT_TELEMETRY_DISABLED: "1"
     steps:
       - uses: actions/checkout@v7
@@ -130,6 +133,39 @@ jobs:
       - name: Migrate
         working-directory: services/api
         run: uv run alembic upgrade head
+      - name: Start MinIO (S3) and the Temporal dev server
+        run: |
+          docker run -d --name minio -p 9000:9000 \
+            -e MINIO_ROOT_USER=minioadmin -e MINIO_ROOT_PASSWORD=minioadmin \
+            minio/minio:latest server /data
+          docker run -d --name temporal -p 7233:7233 \
+            temporalio/temporal:latest server start-dev --ip 0.0.0.0
+          for i in $(seq 60); do
+            (nc -z localhost 9000 && nc -z localhost 7233) && break; sleep 2
+          done
+      - name: Create buckets
+        run: |
+          uv run python - <<'PY'
+          import time, boto3
+          s3 = boto3.client("s3", endpoint_url="http://localhost:9000", region_name="eu-west-1")
+          for attempt in range(30):
+              try:
+                  for bucket in ("workforce-uploads", "workforce-artefacts"):
+                      s3.create_bucket(Bucket=bucket)
+                  break
+              except Exception as exc:
+                  print("waiting for MinIO:", exc); time.sleep(2)
+          PY
+      - name: Start the document worker
+        env:
+          WORKFORCE_ENV: test
+          WORKFORCE_SCANNER: eicar
+          WORKFORCE_WORKER_DATABASE_URL: postgresql+asyncpg://workforce_worker_login:workforce_worker@localhost:5432/workforce
+          WORKFORCE_S3_ENDPOINT_URL: http://localhost:9000
+        run: |
+          nohup uv run --package workforce-workers python -m workforce_workers.worker > worker.log 2>&1 &
+          sleep 5
+          cat worker.log
       - name: Build web
         working-directory: apps/web
         run: |
@@ -149,4 +185,5 @@ jobs:
           path: |
             apps/web/playwright-report
             apps/web/test-results
+            worker.log
           retention-days: 7

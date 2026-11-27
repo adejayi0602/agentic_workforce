@@ -36,7 +36,7 @@ make setup          # install Python and web dependencies
 make up             # start Postgres, Temporal, MinIO and Redis
 make migrate        # apply database migrations (as the schema owner)
 make api            # FastAPI on http://localhost:8000  (docs at /docs)
-make worker         # Temporal worker on task queue "workforce-main"
+make worker         # Temporal worker: scans and processes uploaded documents
 make web            # Next.js on http://localhost:3000
 ```
 

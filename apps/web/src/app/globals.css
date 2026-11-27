@@ -463,3 +463,170 @@ a:focus-visible {
     color: var(--muted);
   }
 }
+
+/* ---- Sprint 2: documents ---- */
+
+.pill-tone-ok {
+  color: var(--ok);
+  border-color: var(--ok);
+}
+
+.pill-tone-busy {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.pill-tone-warn {
+  color: var(--warn);
+  border-color: var(--warn);
+}
+
+.pill-tone-bad {
+  color: var(--down);
+  border-color: var(--down);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: 16px;
+}
+
+.upload {
+  margin: 8px 0 20px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.upload-status {
+  display: grid;
+  gap: 6px;
+}
+
+.meter {
+  display: block;
+  height: 8px;
+  background: var(--bg);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.meter span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  transition: width 0.2s ease;
+}
+
+.versions {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 14px;
+}
+
+.version {
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.version:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.version-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.version p {
+  margin: 6px 0 0;
+}
+
+.review {
+  display: grid;
+  grid-template-columns: minmax(0, 240px) minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.outline {
+  position: sticky;
+  top: 16px;
+  max-height: calc(100vh - 32px);
+  overflow: auto;
+  margin-top: 0;
+}
+
+.outline h2 {
+  font-size: 1rem;
+}
+
+.outline ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+  font-size: 0.875rem;
+}
+
+.search {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 16px;
+}
+
+.blocks {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.block p {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.block-heading h2,
+.block-heading h3 {
+  margin: 12px 0 0;
+}
+
+.block-heading {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.block-note p {
+  font-style: italic;
+}
+
+.where {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.block .table {
+  margin: 0;
+}
+
+@media (max-width: 900px) {
+  .review {
+    grid-template-columns: 1fr;
+  }
+
+  .outline {
+    position: static;
+    max-height: 260px;
+  }
+}

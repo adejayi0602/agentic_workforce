@@ -49,6 +49,7 @@ export default defineConfig({
         WORKFORCE_ORGANISATION_CREATION: "open",
         WORKFORCE_CORS_ORIGINS: `["http://localhost:${WEB_PORT}"]`,
         ...(process.env.E2E_DATABASE_URL ? { WORKFORCE_DATABASE_URL: process.env.E2E_DATABASE_URL } : {}),
+        ...(process.env.E2E_S3_ENDPOINT_URL ? { WORKFORCE_S3_ENDPOINT_URL: process.env.E2E_S3_ENDPOINT_URL } : {}),
       },
     },
     {
