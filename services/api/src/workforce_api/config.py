@@ -42,6 +42,13 @@ class Settings(BaseSettings):
     # org admin. Local development and tests use "open".
     organisation_creation: Literal["open", "closed"] = "closed"
 
+    # Object storage (ADR-0012). MinIO locally; S3 in AWS (endpoint unset, IAM role credentials).
+    s3_endpoint_url: str | None = "http://localhost:9000"
+    s3_region: str = "eu-west-1"
+    s3_bucket_uploads: str = "workforce-uploads"
+    s3_bucket_artefacts: str = "workforce-artefacts"
+    upload_url_ttl_seconds: int = 900
+
     @model_validator(mode="after")
     def _dev_auth_only_where_safe(self) -> Self:
         if self.auth_mode == "dev" and self.env not in DEV_AUTH_ENVIRONMENTS:

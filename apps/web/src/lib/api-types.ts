@@ -244,6 +244,85 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/documents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Documents */
+        get: operations["list_documents_api_v1_projects__project_id__documents_get"];
+        put?: never;
+        /**
+         * Create Document
+         * @description Start uploading a new document. PUT the file to `upload.url` with `upload.headers`,
+         *     then call `.../versions/{version_id}/complete`.
+         */
+        post: operations["create_document_api_v1_projects__project_id__documents_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/documents/{document_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Document */
+        get: operations["get_document_api_v1_projects__project_id__documents__document_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/documents/{document_id}/versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add Version
+         * @description Upload a new version of an existing document. Earlier versions are kept unchanged.
+         */
+        post: operations["add_version_api_v1_projects__project_id__documents__document_id__versions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/documents/{document_id}/versions/{version_id}/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Complete Upload
+         * @description Confirm the upload. The API checks the stored file's size and SHA-256 itself.
+         */
+        post: operations["complete_upload_api_v1_projects__project_id__documents__document_id__versions__version_id__complete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -308,6 +387,91 @@ export interface components {
              * @constant
              */
             token_type: "Bearer";
+        };
+        /** DocumentCreate */
+        DocumentCreate: {
+            /**
+             * Category
+             * @default supporting
+             * @enum {string}
+             */
+            category: "srs" | "brief" | "architecture" | "supporting";
+            /**
+             * Filename
+             * @example payments-srs.docx
+             */
+            filename: string;
+            /**
+             * Sha256
+             * @description SHA-256 of the file, 64 hex characters
+             */
+            sha256: string;
+            /**
+             * Size Bytes
+             * @description Exact size in bytes (max 15 MB)
+             */
+            size_bytes: number;
+            /**
+             * Title
+             * @description Defaults to the filename
+             */
+            title?: string | null;
+        };
+        /** DocumentDetail */
+        DocumentDetail: {
+            /** Category */
+            category: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            latest_version: components["schemas"]["VersionOut"] | null;
+            /** Title */
+            title: string;
+            /** Versions */
+            versions: components["schemas"]["VersionOut"][];
+        };
+        /** DocumentOut */
+        DocumentOut: {
+            /** Category */
+            category: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            latest_version: components["schemas"]["VersionOut"] | null;
+            /** Title */
+            title: string;
+        };
+        /** FileDeclaration */
+        FileDeclaration: {
+            /**
+             * Filename
+             * @example payments-srs.docx
+             */
+            filename: string;
+            /**
+             * Sha256
+             * @description SHA-256 of the file, 64 hex characters
+             */
+            sha256: string;
+            /**
+             * Size Bytes
+             * @description Exact size in bytes (max 15 MB)
+             */
+            size_bytes: number;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -497,6 +661,31 @@ export interface components {
          * @enum {string}
          */
         Role: "org_admin" | "project_owner" | "project_manager" | "member" | "auditor";
+        /** UploadOut */
+        UploadOut: {
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+            /** Headers */
+            headers: {
+                [key: string]: string;
+            };
+            /**
+             * Method
+             * @constant
+             */
+            method: "PUT";
+            /** Url */
+            url: string;
+        };
+        /** UploadStarted */
+        UploadStarted: {
+            document: components["schemas"]["DocumentOut"];
+            upload: components["schemas"]["UploadOut"];
+            version: components["schemas"]["VersionOut"];
+        };
         /** ValidationError */
         ValidationError: {
             /** Context */
@@ -509,6 +698,37 @@ export interface components {
             msg: string;
             /** Error Type */
             type: string;
+        };
+        /** VersionOut */
+        VersionOut: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Filename */
+            filename: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Media Type */
+            media_type: string;
+            /** Processed At */
+            processed_at: string | null;
+            /** Scanned At */
+            scanned_at: string | null;
+            /** Sha256 */
+            sha256: string;
+            /** Size Bytes */
+            size_bytes: number;
+            /** Status */
+            status: string;
+            /** Uploaded At */
+            uploaded_at: string | null;
+            /** Version */
+            version: number;
         };
     };
     responses: never;
@@ -988,6 +1208,189 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Page_AuditEventOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_documents_api_v1_projects__project_id__documents_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description The organisation this request acts in. The caller must be a member. */
+                "X-Organisation-ID"?: string | null;
+            };
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_document_api_v1_projects__project_id__documents_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Idempotency-Key"?: string | null;
+                /** @description The organisation this request acts in. The caller must be a member. */
+                "X-Organisation-ID"?: string | null;
+            };
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DocumentCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UploadStarted"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_document_api_v1_projects__project_id__documents__document_id__get: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description The organisation this request acts in. The caller must be a member. */
+                "X-Organisation-ID"?: string | null;
+            };
+            path: {
+                project_id: string;
+                document_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_version_api_v1_projects__project_id__documents__document_id__versions_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description The organisation this request acts in. The caller must be a member. */
+                "X-Organisation-ID"?: string | null;
+            };
+            path: {
+                project_id: string;
+                document_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FileDeclaration"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UploadStarted"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    complete_upload_api_v1_projects__project_id__documents__document_id__versions__version_id__complete_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description The organisation this request acts in. The caller must be a member. */
+                "X-Organisation-ID"?: string | null;
+            };
+            path: {
+                project_id: string;
+                document_id: string;
+                version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VersionOut"];
                 };
             };
             /** @description Validation Error */

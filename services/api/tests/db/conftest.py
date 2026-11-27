@@ -131,6 +131,44 @@ class Api:
         self.client = client
         self.database = database
 
+    async def upload_document(
+        self,
+        headers: dict[str, str],
+        project_id: str,
+        content: bytes = b"# SRS\n\nThe system shall work.\n",
+        filename: str = "srs.md",
+        complete: bool = True,
+    ) -> dict[str, Any]:
+        """Start an upload, PUT the bytes to the presigned URL, and complete it."""
+        import hashlib
+
+        start = await self.client.post(
+            f"/api/v1/projects/{project_id}/documents",
+            json={
+                "filename": filename,
+                "size_bytes": len(content),
+                "sha256": hashlib.sha256(content).hexdigest(),
+                "category": "srs",
+            },
+            headers=headers,
+        )
+        assert start.status_code == 201, start.text
+        body: dict[str, Any] = start.json()
+        async with httpx.AsyncClient() as s3:
+            put = await s3.put(
+                body["upload"]["url"], content=content, headers=body["upload"]["headers"]
+            )
+            assert put.status_code == 200, put.text
+        if complete:
+            done = await self.client.post(
+                f"/api/v1/projects/{project_id}/documents/{body['document']['id']}"
+                f"/versions/{body['version']['id']}/complete",
+                headers=headers,
+            )
+            assert done.status_code == 200, done.text
+            body["completed"] = done.json()
+        return body
+
     async def sign_in(self, name: str | None = None) -> dict[str, str]:
         subject = name or unique("user")
         r = await self.client.post(
@@ -193,12 +231,40 @@ class Api:
             await owner.dispose()
 
 
+@pytest.fixture(scope="session")
+def s3_endpoint() -> Iterator[str]:
+    """An in-process S3 emulator (moto) with the buckets the API expects."""
+    import socket
+
+    import boto3
+    from moto.server import ThreadedMotoServer
+
+    with socket.socket() as sock:
+        sock.bind(("127.0.0.1", 0))
+        port = sock.getsockname()[1]
+    os.environ.setdefault("AWS_ACCESS_KEY_ID", "test")
+    os.environ.setdefault("AWS_SECRET_ACCESS_KEY", "test")
+    server = ThreadedMotoServer(ip_address="127.0.0.1", port=port, verbose=False)
+    server.start()
+    endpoint = f"http://127.0.0.1:{port}"
+    client = boto3.client("s3", endpoint_url=endpoint, region_name="eu-west-1")
+    for bucket in ("workforce-uploads", "workforce-artefacts"):
+        client.create_bucket(
+            Bucket=bucket, CreateBucketConfiguration={"LocationConstraint": "eu-west-1"}
+        )
+    try:
+        yield endpoint
+    finally:
+        server.stop()
+
+
 @pytest.fixture
-async def api(test_database: DatabaseUrls) -> AsyncIterator[Api]:
+async def api(test_database: DatabaseUrls, s3_endpoint: str) -> AsyncIterator[Api]:
     settings = Settings(
         env="test",
         organisation_creation="open",
         database_url=test_database.app_url.render_as_string(hide_password=False),
+        s3_endpoint_url=s3_endpoint,
     )
     app = create_app(settings)
     async with (

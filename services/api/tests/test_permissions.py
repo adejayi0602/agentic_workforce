@@ -14,14 +14,26 @@ EXPECTED: dict[Role, set[str]] = {
         "org.read",
         "members.read",
         "project.read",
+        "document.read",
         "project.create",
         "project.update",
         "project.archive",
+        "document.upload",
+        "document.process",
     },
-    Role.PROJECT_MANAGER: {"org.read", "members.read", "project.read", "project.update"},
-    Role.MEMBER: {"org.read", "members.read", "project.read"},
-    Role.AUDITOR: {"org.read", "members.read", "project.read", "audit.read"},
+    Role.PROJECT_MANAGER: {
+        "org.read",
+        "members.read",
+        "project.read",
+        "document.read",
+        "project.update",
+        "document.upload",
+        "document.process",
+    },
+    Role.MEMBER: {"org.read", "members.read", "project.read", "document.read", "document.upload"},
+    Role.AUDITOR: {"org.read", "members.read", "project.read", "document.read", "audit.read"},
 }
+
 
 # Routes that deliberately need no organisation permission.
 PUBLIC_ROUTES = {
