@@ -1,4 +1,4 @@
-"""Object storage (S3 in AWS, MinIO locally). Deliberately small: only what intake needs.
+"""Object storage (S3 in AWS, SeaweedFS locally). Deliberately small: only what intake needs.
 
 boto3 is synchronous, so calls run in a worker thread to keep the event loop free.
 """

@@ -42,7 +42,7 @@ class Settings(BaseSettings):
     # org admin. Local development and tests use "open".
     organisation_creation: Literal["open", "closed"] = "closed"
 
-    # Object storage (ADR-0012). MinIO locally; S3 in AWS (endpoint unset, IAM role credentials).
+    # Object storage (ADR-0012, ADR-0013). SeaweedFS locally; S3 in AWS (endpoint unset, IAM role credentials).
     s3_endpoint_url: str | None = "http://localhost:9000"
     s3_region: str = "eu-west-1"
     s3_bucket_uploads: str = "workforce-uploads"

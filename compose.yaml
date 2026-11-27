@@ -38,36 +38,34 @@ services:
     volumes:
       - temporal-data:/data
 
-  # S3-compatible object storage for uploads, artefacts and evidence.
-  minio:
-    image: minio/minio:latest
-    command: server /data --console-address ":9001"
-    environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
+  # S3-compatible object storage for uploads, artefacts and evidence (ADR-0013).
+  # SeaweedFS replaced MinIO, whose public images were withdrawn. Local only: no credentials
+  # are enforced, and browser uploads are allowed from any origin.
+  s3:
+    image: chrislusf/seaweedfs:4.54
+    command: ["server", "-dir=/data", "-s3", "-s3.port=9000", "-master.volumeSizeLimitMB=100"]
     ports:
       - "9000:9000"
-      - "9001:9001"
     volumes:
-      - minio-data:/data
-    healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
-      interval: 5s
-      timeout: 3s
-      retries: 20
+      - s3-data:/data
 
-  # Creates the buckets the API expects, with versioning on (spec §12 Files).
-  minio-setup:
-    image: minio/mc:latest
+  # Creates the buckets the API expects (versioning on where supported, spec §12 Files).
+  s3-setup:
+    image: amazon/aws-cli:latest
     depends_on:
-      minio:
-        condition: service_healthy
+      - s3
+    environment:
+      AWS_ACCESS_KEY_ID: local
+      AWS_SECRET_ACCESS_KEY: local
+      AWS_REGION: eu-west-1
     entrypoint: ["/bin/sh", "-c"]
     command:
       - |
-        mc alias set local http://minio:9000 minioadmin minioadmin &&
+        for i in $$(seq 30); do aws --endpoint-url http://s3:9000 s3 ls >/dev/null 2>&1 && break; sleep 2; done
         for b in workforce-uploads workforce-artefacts workforce-evidence; do
-          mc mb --ignore-existing local/$$b && mc version enable local/$$b;
+          aws --endpoint-url http://s3:9000 s3 mb s3://$$b || true
+          aws --endpoint-url http://s3:9000 s3api put-bucket-versioning --bucket $$b \
+            --versioning-configuration Status=Enabled || true
         done
     restart: "no"
 
@@ -84,4 +82,4 @@ services:
 volumes:
   postgres-data:
   temporal-data:
-  minio-data:
+  s3-data:
