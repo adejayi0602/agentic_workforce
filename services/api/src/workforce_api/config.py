@@ -49,6 +49,11 @@ class Settings(BaseSettings):
     s3_bucket_artefacts: str = "workforce-artefacts"
     upload_url_ttl_seconds: int = 900
 
+    # Temporal, for starting document processing (ADR-0004).
+    temporal_address: str = "localhost:7233"
+    temporal_namespace: str = "default"
+    temporal_task_queue: str = "workforce-main"
+
     @model_validator(mode="after")
     def _dev_auth_only_where_safe(self) -> Self:
         if self.auth_mode == "dev" and self.env not in DEV_AUTH_ENVIRONMENTS:

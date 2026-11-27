@@ -33,13 +33,17 @@ class StoredObject:
 
 
 class ObjectStore:
-    def __init__(self, settings: Settings) -> None:
+    def __init__(self, *, endpoint_url: str | None, region: str) -> None:
         self._client: Any = boto3.client(
             "s3",
-            endpoint_url=settings.s3_endpoint_url,
-            region_name=settings.s3_region,
+            endpoint_url=endpoint_url,
+            region_name=region,
             config=Config(signature_version="s3v4", s3={"addressing_style": "path"}),
         )
+
+    @classmethod
+    def from_settings(cls, settings: Settings) -> "ObjectStore":
+        return cls(endpoint_url=settings.s3_endpoint_url, region=settings.s3_region)
 
     def presign_put(
         self,
@@ -73,6 +77,33 @@ class ObjectStore:
             headers={"Content-Type": content_type, "x-amz-checksum-sha256": sha256_b64},
             expires_at=datetime.now(UTC) + timedelta(seconds=ttl_seconds),
         )
+
+    async def get_bytes(self, *, bucket: str, key: str, max_bytes: int) -> bytes:
+        """Read a whole object, refusing anything larger than max_bytes."""
+        return await to_thread.run_sync(self._get_bytes, bucket, key, max_bytes)
+
+    def _get_bytes(self, bucket: str, key: str, max_bytes: int) -> bytes:
+        response = self._client.get_object(Bucket=bucket, Key=key)
+        body = response["Body"]
+        try:
+            data = body.read(max_bytes + 1)
+        finally:
+            body.close()
+        if len(data) > max_bytes:
+            raise ValueError(f"Object {key} is larger than {max_bytes} bytes.")
+        return bytes(data)
+
+    async def put_bytes(self, *, bucket: str, key: str, data: bytes, content_type: str) -> None:
+        await to_thread.run_sync(
+            lambda: self._client.put_object(
+                Bucket=bucket, Key=key, Body=data, ContentType=content_type
+            )
+        )
+
+    @property
+    def client(self) -> Any:
+        """The raw boto3 client, for scanners that read object tags."""
+        return self._client
 
     async def measure(self, *, bucket: str, key: str, max_bytes: int) -> StoredObject | None:
         """Stream the object and return its real size and SHA-256, or None if it isn't there.

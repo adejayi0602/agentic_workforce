@@ -49,6 +49,10 @@ BODIES: dict[tuple[str, str], dict[str, Any] | None] = {
         "POST",
         "/api/v1/projects/{project_id}/documents/{document_id}/versions/{version_id}/complete",
     ): None,
+    (
+        "POST",
+        "/api/v1/projects/{project_id}/documents/{document_id}/versions/{version_id}/process",
+    ): None,
 }
 
 # List endpoints, and the A identifiers that must never appear in B's results.

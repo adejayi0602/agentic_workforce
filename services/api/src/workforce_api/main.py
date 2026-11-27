@@ -23,6 +23,7 @@ from workforce_api.modules.identity import routes as identity_routes
 from workforce_api.modules.projects import routes as project_routes
 from workforce_api.routes import health
 from workforce_api.storage import ObjectStore
+from workforce_api.workflows import WorkflowStarter
 
 logger = logging.getLogger(__name__)
 
@@ -64,6 +65,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
         yield
         await database.dispose()
+        await app.state.workflows.close()
 
     app = FastAPI(
         title="Agentic IT Workforce API",
@@ -74,7 +76,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
     app.state.settings = settings
     app.state.database = database
-    app.state.object_store = ObjectStore(settings)
+    app.state.object_store = ObjectStore.from_settings(settings)
+    app.state.workflows = WorkflowStarter(settings)
     _configure_auth(app, settings)
 
     app.add_middleware(
