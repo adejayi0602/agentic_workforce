@@ -18,9 +18,11 @@ from workforce_api.correlation import (
 from workforce_api.db import Database
 from workforce_api.errors import register_error_handlers
 from workforce_api.modules.audit import routes as audit_routes
+from workforce_api.modules.documents import routes as document_routes
 from workforce_api.modules.identity import routes as identity_routes
 from workforce_api.modules.projects import routes as project_routes
 from workforce_api.routes import health
+from workforce_api.storage import ObjectStore
 
 logger = logging.getLogger(__name__)
 
@@ -72,6 +74,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
     app.state.settings = settings
     app.state.database = database
+    app.state.object_store = ObjectStore(settings)
     _configure_auth(app, settings)
 
     app.add_middleware(
@@ -90,6 +93,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     v1.include_router(identity_routes.router)
     v1.include_router(audit_routes.router)
     v1.include_router(project_routes.router)
+    v1.include_router(document_routes.router)
     if settings.auth_mode == "dev":
         v1.include_router(dev_routes.router)
     app.include_router(v1)

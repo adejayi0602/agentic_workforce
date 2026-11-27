@@ -19,16 +19,31 @@ class Permission(StrEnum):
     PROJECT_UPDATE = "project.update"
     PROJECT_ARCHIVE = "project.archive"
     AUDIT_READ = "audit.read"
+    DOCUMENT_READ = "document.read"
+    DOCUMENT_UPLOAD = "document.upload"
+    DOCUMENT_PROCESS = "document.process"
 
 
-_EVERYONE = frozenset({Permission.ORG_READ, Permission.MEMBERS_READ, Permission.PROJECT_READ})
+_EVERYONE = frozenset(
+    {
+        Permission.ORG_READ,
+        Permission.MEMBERS_READ,
+        Permission.PROJECT_READ,
+        Permission.DOCUMENT_READ,
+    }
+)
+# Spec §6: any project member may upload; starting processing is for project managers and up.
+_UPLOAD = frozenset({Permission.DOCUMENT_UPLOAD})
+_PROCESS = frozenset({Permission.DOCUMENT_PROCESS})
 
 ROLE_PERMISSIONS: dict[Role, frozenset[Permission]] = {
     Role.ORG_ADMIN: frozenset(Permission),
     Role.PROJECT_OWNER: _EVERYONE
+    | _UPLOAD
+    | _PROCESS
     | {Permission.PROJECT_CREATE, Permission.PROJECT_UPDATE, Permission.PROJECT_ARCHIVE},
-    Role.PROJECT_MANAGER: _EVERYONE | {Permission.PROJECT_UPDATE},
-    Role.MEMBER: _EVERYONE,
+    Role.PROJECT_MANAGER: _EVERYONE | _UPLOAD | _PROCESS | {Permission.PROJECT_UPDATE},
+    Role.MEMBER: _EVERYONE | _UPLOAD,
     Role.AUDITOR: _EVERYONE | {Permission.AUDIT_READ},
 }
 
