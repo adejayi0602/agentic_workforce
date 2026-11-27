@@ -3,7 +3,16 @@ name = "workforce-intake"
 version = "0.1.0"
 description = "Document intake libraries: malware scanners and document parsers. Pure: no database."
 requires-python = ">=3.12"
-dependencies = ["pydantic>=2.9", "boto3>=1.35"]
+dependencies = [
+  "pydantic>=2.9",
+  "boto3>=1.35",
+  "python-docx>=1.1",
+  "python-pptx>=1.0",
+  "openpyxl>=3.1",
+  "pypdf>=5.0",
+  # openpyxl uses defusedxml automatically when it is installed (XML bomb protection).
+  "defusedxml>=0.7",
+]
 
 [build-system]
 requires = ["hatchling"]
