@@ -17,6 +17,8 @@ class Project(Base):
     __tablename__ = "projects"
     __table_args__ = (
         UniqueConstraint("organisation_id", "key"),
+        # Lets child tables reference (id, organisation_id) so their tenant must match.
+        UniqueConstraint("id", "organisation_id"),
         CheckConstraint("key ~ '^[A-Z][A-Z0-9]{1,9}$'", name="key_format"),
         CheckConstraint(
             "type IN ('software', 'infrastructure', 'data', 'operations', 'other')", name="type"
