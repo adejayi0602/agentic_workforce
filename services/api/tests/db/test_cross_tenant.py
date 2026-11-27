@@ -28,6 +28,9 @@ NOT_ORG_SCOPED = {
     ("POST", "/api/v1/dev-auth/token"),
     ("GET", "/api/v1/me"),
     ("POST", "/api/v1/organisations"),
+    ("GET", "/api/v1/dev-auth/mail"),
+    ("POST", "/api/v1/invitations/preview"),  # checked by test_invitations_api
+    ("POST", "/api/v1/invitations/accept"),  # checked by test_invitations_api
 }
 
 # A valid body for every route that takes one, so a 404 can't be masked by a 422.
@@ -35,6 +38,7 @@ BODIES: dict[tuple[str, str], dict[str, Any] | None] = {
     ("POST", "/api/v1/projects"): {"key": "XTEN", "name": "x", "type": "software"},
     ("PATCH", "/api/v1/projects/{project_id}"): {"name": "hijacked"},
     ("PATCH", "/api/v1/organisations/current/members/{user_id}"): {"role": "member"},
+    ("POST", "/api/v1/organisations/current/invitations"): {"email": "x@example.com"},
     ("POST", "/api/v1/projects/{project_id}/documents"): {
         "filename": "x.md",
         "size_bytes": 1,
@@ -57,6 +61,7 @@ BODIES: dict[tuple[str, str], dict[str, Any] | None] = {
 
 # List endpoints, and the A identifiers that must never appear in B's results.
 LISTS = {
+    "/api/v1/organisations/current/invitations": "invitation_id",
     "/api/v1/projects": "project_id",
     "/api/v1/audit-events": "any",
     "/api/v1/organisations/current/members": "user_id",
@@ -71,6 +76,7 @@ class Org:
     project_id: str
     document_id: str = ""
     version_id: str = ""
+    invitation_id: str = ""
 
     def headers(self) -> dict[str, str]:
         return {**self.admin, "X-Organisation-ID": self.id}
@@ -89,6 +95,12 @@ async def make_org(api: Any) -> Org:
     uploaded = await api.upload_document(headers, victim.project_id, content=b"secret SRS")
     victim.document_id = uploaded["document"]["id"]
     victim.version_id = uploaded["version"]["id"]
+    invited = await api.client.post(
+        "/api/v1/organisations/current/invitations",
+        json={"email": f"{uuid.uuid4().hex[:8]}@example.com"},
+        headers=headers,
+    )
+    victim.invitation_id = invited.json()["id"]
     return victim
 
 
@@ -106,6 +118,7 @@ def fill(path: str, victim: Org) -> str:
         "user_id": victim.admin_id,
         "document_id": victim.document_id,
         "version_id": victim.version_id,
+        "invitation_id": victim.invitation_id,
     }
 
     def sub(match: re.Match[str]) -> str:
@@ -126,7 +139,7 @@ def test_suite_covers_every_route() -> None:
     """Fails when a route is added without telling this suite how to attack it."""
     assert len(org_scoped_routes()) >= 10, "route discovery looks broken"
     for method, path in org_scoped_routes():
-        fill(path, Org("a", {}, "u", "p", "d", "v"))  # every path parameter has a value
+        fill(path, Org("a", {}, "u", "p", "d", "v", "i"))  # every path parameter has a value
         if method in {"POST", "PATCH", "PUT"}:
             assert (method, path) in BODIES, f"Add a valid body for {method} {path} to BODIES"
 
@@ -160,7 +173,7 @@ async def test_lists_never_include_another_organisations_data(
     api: Any, orgs: tuple[Org, Org]
 ) -> None:
     a, b = orgs
-    a_ids = {a.id, a.project_id, a.admin_id, a.document_id, a.version_id}
+    a_ids = {a.id, a.project_id, a.admin_id, a.document_id, a.version_id, a.invitation_id}
     for path in LISTS:
         body = (await api.client.get(path, headers=b.headers())).json()
         items = body["items"] if isinstance(body, dict) else body

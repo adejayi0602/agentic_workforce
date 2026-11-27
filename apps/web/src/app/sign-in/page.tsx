@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { ErrorNotice } from "@/components/error-notice";
 import { apiRequest } from "@/lib/api";
 import { AUTH_MODE, authorizeUrl, challengeFor, createVerifier, oidcConfigFromEnv } from "@/lib/auth/pkce";
+import { afterSignInPath } from "@/lib/invitations";
 import { useSession } from "@/lib/session";
 import { write } from "@/lib/storage";
 
@@ -14,7 +15,7 @@ export default function SignInPage() {
   const router = useRouter();
 
   useEffect(() => {
-    if (session.status === "ready") router.replace("/");
+    if (session.status === "ready") router.replace(afterSignInPath());
   }, [session.status, router]);
 
   return (

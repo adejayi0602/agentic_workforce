@@ -26,6 +26,10 @@ export type UploadStarted = Schemas["UploadStarted"];
 export type Extraction = Schemas["Extraction"];
 export type ExtractedBlock = Schemas["Block"];
 export type BlockLocation = Schemas["Location"];
+export type Invitation = Schemas["InvitationOut"];
+export type InvitationSent = Schemas["InvitationSent"];
+export type InvitationPreview = Schemas["InvitationPreview"];
+export type InvitationAccepted = Schemas["Accepted"];
 
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
 

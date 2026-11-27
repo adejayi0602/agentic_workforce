@@ -50,6 +50,12 @@ class Settings(BaseSettings):
     s3_bucket_artefacts: str = "workforce-artefacts"
     upload_url_ttl_seconds: int = 900
 
+    # Invitations (#11). Links point at the web app; the token travels in the URL fragment.
+    web_base_url: str = "http://localhost:3000"
+    invitation_ttl_days: int = 7
+    # "console" logs emails and keeps them for the dev mailbox. SES arrives with AWS deployment.
+    mailer: Literal["console"] = "console"
+
     # Temporal, for starting document processing (ADR-0004).
     temporal_address: str = "localhost:7233"
     temporal_namespace: str = "default"

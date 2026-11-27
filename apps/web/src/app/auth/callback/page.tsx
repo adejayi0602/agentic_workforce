@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 import { exchangeCode, oidcConfigFromEnv } from "@/lib/auth/pkce";
+import { afterSignInPath } from "@/lib/invitations";
 import { useSession } from "@/lib/session";
 import { read, write } from "@/lib/storage";
 
@@ -35,7 +36,7 @@ export default function AuthCallbackPage() {
       }
       const tokens = await exchangeCode(config, code, verifier);
       session.signIn(tokens.accessToken, tokens.expiresAt);
-      router.replace("/");
+      router.replace(afterSignInPath());
     }
 
     complete().catch((err: unknown) => setError(err instanceof Error ? err.message : "Sign-in failed."));
