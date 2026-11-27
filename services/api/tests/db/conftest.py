@@ -23,15 +23,18 @@ from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 API_DIR = Path(__file__).resolve().parents[2]
 OWNER_ROLE = "wf_test_owner"
 APP_LOGIN_ROLE = "wf_test_api"
+WORKER_LOGIN_ROLE = "wf_test_worker"
 # Test-only credentials for throwaway roles in a throwaway database.
 OWNER_PASSWORD = "wf_test_owner"  # noqa: S105
 APP_PASSWORD = "wf_test_api"  # noqa: S105
+WORKER_PASSWORD = "wf_test_worker"  # noqa: S105
 
 
 @dataclass(frozen=True)
 class DatabaseUrls:
     owner_url: URL
     app_url: URL
+    worker_url: URL
 
 
 def _asyncpg_dsn(url: URL) -> str:
@@ -69,20 +72,28 @@ def test_database() -> Iterator[DatabaseUrls]:
     async def setup() -> None:
         await _ensure_role(admin_url, OWNER_ROLE, OWNER_PASSWORD, "CREATEROLE")
         await _ensure_role(admin_url, APP_LOGIN_ROLE, APP_PASSWORD)
+        await _ensure_role(admin_url, WORKER_LOGIN_ROLE, WORKER_PASSWORD)
         await _admin(
             admin_url,
             """DO $$ BEGIN
                  IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'workforce_app') THEN
                    CREATE ROLE workforce_app NOLOGIN;
                  END IF;
+                 IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'workforce_worker') THEN
+                   CREATE ROLE workforce_worker NOLOGIN;
+                 END IF;
                END $$;""",
             f"GRANT workforce_app TO {APP_LOGIN_ROLE}",
+            f"GRANT workforce_worker TO {WORKER_LOGIN_ROLE}",
             f"CREATE DATABASE {db_name} OWNER {OWNER_ROLE}",
         )
 
     asyncio.run(setup())
     owner_url = admin_url.set(username=OWNER_ROLE, password=OWNER_PASSWORD, database=db_name)
     app_url = admin_url.set(username=APP_LOGIN_ROLE, password=APP_PASSWORD, database=db_name)
+    worker_url = admin_url.set(
+        username=WORKER_LOGIN_ROLE, password=WORKER_PASSWORD, database=db_name
+    )
 
     migrate_env = {
         **os.environ,
@@ -96,7 +107,7 @@ def test_database() -> Iterator[DatabaseUrls]:
         capture_output=True,
     )
     try:
-        yield DatabaseUrls(owner_url=owner_url, app_url=app_url)
+        yield DatabaseUrls(owner_url=owner_url, app_url=app_url, worker_url=worker_url)
     finally:
         asyncio.run(_admin(admin_url, f"DROP DATABASE IF EXISTS {db_name} WITH (FORCE)"))
 

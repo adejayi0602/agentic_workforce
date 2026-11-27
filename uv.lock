@@ -11,6 +11,7 @@ members = [
     "agentic-workforce",
     "workforce-api",
     "workforce-contracts",
+    "workforce-intake",
     "workforce-workers",
 ]
 
@@ -2603,6 +2604,7 @@ dependencies = [
     { name = "sqlalchemy", extra = ["asyncio"] },
     { name = "uvicorn", extra = ["standard"] },
     { name = "workforce-contracts" },
+    { name = "workforce-intake" },
 ]
 
 [package.metadata]
@@ -2617,6 +2619,7 @@ requires-dist = [
     { name = "sqlalchemy", extras = ["asyncio"], specifier = ">=2.0.36" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.32" },
     { name = "workforce-contracts", editable = "packages/contracts" },
+    { name = "workforce-intake", editable = "packages/intake" },
 ]
 
 [[package]]
@@ -2631,20 +2634,39 @@ dependencies = [
 requires-dist = [{ name = "pydantic", specifier = ">=2.9" }]
 
 [[package]]
+name = "workforce-intake"
+version = "0.1.0"
+source = { editable = "packages/intake" }
+dependencies = [
+    { name = "boto3" },
+    { name = "pydantic" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "boto3", specifier = ">=1.35" },
+    { name = "pydantic", specifier = ">=2.9" },
+]
+
+[[package]]
 name = "workforce-workers"
 version = "0.1.0"
 source = { editable = "services/workers" }
 dependencies = [
     { name = "pydantic-settings" },
     { name = "temporalio" },
+    { name = "workforce-api" },
     { name = "workforce-contracts" },
+    { name = "workforce-intake" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "pydantic-settings", specifier = ">=2.6" },
     { name = "temporalio", specifier = ">=1.9" },
+    { name = "workforce-api", editable = "services/api" },
     { name = "workforce-contracts", editable = "packages/contracts" },
+    { name = "workforce-intake", editable = "packages/intake" },
 ]
 
 [[package]]

@@ -34,7 +34,7 @@ format:
 lint:
 	uv run ruff format --check .
 	uv run ruff check .
-	uv run mypy packages/contracts/src services/api/src services/workers/src
+	uv run mypy packages/contracts/src packages/intake/src services/api/src services/workers/src
 	cd apps/web && npm run lint && npm run typecheck
 
 test:

@@ -40,7 +40,7 @@ jobs:
       - run: uv sync --all-packages --locked
       - run: uv run ruff format --check .
       - run: uv run ruff check .
-      - run: uv run mypy packages/contracts/src services/api/src services/workers/src
+      - run: uv run mypy packages/contracts/src packages/intake/src services/api/src services/workers/src
       - name: OpenAPI contract is up to date
         run: |
           uv run python services/api/scripts/export_openapi.py
