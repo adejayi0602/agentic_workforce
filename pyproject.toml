@@ -55,7 +55,10 @@ ignore_missing_imports = false
 
 # boto3 ships no type hints. Its use is confined to workforce_api.storage.
 [[tool.mypy.overrides]]
-module = ["boto3", "boto3.*", "botocore.*", "moto", "moto.*"]
+module = [
+  "boto3", "boto3.*", "botocore.*", "moto", "moto.*",
+  "docx", "docx.*", "pptx", "pptx.*", "openpyxl", "openpyxl.*", "defusedxml", "defusedxml.*",
+]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
