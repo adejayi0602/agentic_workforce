@@ -9,6 +9,7 @@ from workforce_api.modules.documents.models import (
 )
 from workforce_api.modules.idempotency.models import IdempotencyKey
 from workforce_api.modules.identity.models import Organisation, OrganisationMember, Role, User
+from workforce_api.modules.invitations.models import OrganisationInvitation
 from workforce_api.modules.projects.models import Project
 
 __all__ = [
@@ -18,6 +19,7 @@ __all__ = [
     "DocumentVersion",
     "IdempotencyKey",
     "Organisation",
+    "OrganisationInvitation",
     "OrganisationMember",
     "OutboxEvent",
     "Project",

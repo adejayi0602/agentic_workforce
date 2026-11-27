@@ -42,6 +42,9 @@ PUBLIC_ROUTES = {
     ("POST", "/api/v1/dev-auth/token"),
     ("GET", "/api/v1/me"),  # signed-in user only; shows the user's own data
     ("POST", "/api/v1/organisations"),  # signed-in user; gated by organisation_creation
+    ("GET", "/api/v1/dev-auth/mail"),  # dev mode only, like the token endpoint
+    ("POST", "/api/v1/invitations/preview"),  # signed-in user holding the invitation token
+    ("POST", "/api/v1/invitations/accept"),  # signed-in user holding the token + invited email
 }
 
 

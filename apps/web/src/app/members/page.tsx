@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { ErrorNotice } from "@/components/error-notice";
+import { InvitationsPanel } from "@/components/invitations-panel";
 import { RequireSession } from "@/components/require-session";
 import { apiGet, apiRequest, type Member, type Role } from "@/lib/api";
 import { useSession } from "@/lib/session";
@@ -56,7 +57,7 @@ function Members() {
       <h1>Members</h1>
       <p className="lede">
         {manage
-          ? "Change roles here. Inviting new members is coming soon."
+          ? "Invite people and change roles here."
           : "Everyone in this organisation and their role."}
       </p>
       <ErrorNotice error={error} />
@@ -101,6 +102,7 @@ function Members() {
           </tbody>
         </table>
       )}
+      {manage ? <InvitationsPanel /> : null}
     </>
   );
 }

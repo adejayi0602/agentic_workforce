@@ -229,7 +229,7 @@ class Api:
         return {**headers, "X-Organisation-ID": org_id}
 
     async def add_member(self, org_id: str, user_id: str, role: str) -> None:
-        """Invitations arrive in #11; until then tests add members as the schema owner."""
+        """Add a member directly as the schema owner. Real users join by invitation."""
         owner = create_async_engine(self.database.owner_url)
         try:
             async with owner.begin() as conn:
@@ -245,6 +245,20 @@ class Api:
                 )
         finally:
             await owner.dispose()
+
+    async def invite(
+        self, headers: dict[str, str], email: str, role: str = "member"
+    ) -> tuple[dict[str, Any], str]:
+        """Invite someone and return (invitation, token taken from the console mailbox)."""
+        r = await self.client.post(
+            "/api/v1/organisations/current/invitations",
+            json={"email": email, "role": role},
+            headers=headers,
+        )
+        assert r.status_code == 201, r.text
+        mail = (await self.client.get("/api/v1/dev-auth/mail", params={"to": email})).json()
+        token = mail[0]["body"].split("#token=")[1].split()[0]
+        return r.json(), token
 
     async def owner_read(self, table: str, where: str, params: dict[str, str]) -> list[Any]:
         """Read raw rows as the schema owner, with RLS lifted inside a rolled-back transaction.
