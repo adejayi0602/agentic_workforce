@@ -48,6 +48,7 @@ Temporal UI: http://localhost:8233 · MinIO console: http://localhost:9001
 make lint           # ruff + mypy + web lint/typecheck
 make test           # pytest unit tests (no network or Docker needed)
 make test-integration  # database and Temporal tests (needs `make up`, or CI)
+make e2e               # browser tests: sign-in → organisation → projects → audit (needs `make up && make migrate`)
 make check          # everything CI runs
 ```
 
